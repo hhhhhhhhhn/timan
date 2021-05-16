@@ -21,17 +21,18 @@ type program struct {
 	SecsUsed   int    `json:"secsUsed"`
 	SecsLimit  int    `json:"secsLimit"`
 	SecsGoal   int    `json:"secsGoal"`
-	GoalResets int    `json:"goalRestes"` // time resets to reach goal
+	GoalResets int    `json:"goalResets"` // time resets to reach goal
 	Image      string `json:"image"`
 }
 
 var (
-	mutex sync.Mutex
+	mutex    sync.Mutex
+	programs []program
 )
 
-var programs []program = make([]program, 0, 10)
 var resetTime int64 = 86400 // = day
 var lastReset int64 = lastMonday()
+var unit int64 = 60 // seconds
 
 // gets timestamp of monday morning in seconds
 func lastMonday() int64 {
@@ -106,6 +107,7 @@ func save() {
 	handle(ioutil.WriteFile("save/programs.json", []byte(programsToJson()), 0777))
 	handle(ioutil.WriteFile("save/resetTime", []byte(fmt.Sprint(resetTime)), 0777))
 	handle(ioutil.WriteFile("save/lastReset", []byte(fmt.Sprint(lastReset)), 0777))
+	handle(ioutil.WriteFile("save/unit", []byte(fmt.Sprint(unit)), 0777))
 }
 
 func load() error {
@@ -114,6 +116,8 @@ func load() error {
 		return err
 	}
 	programJsonList := strings.Split(string(programsJson)[1:], "\n")
+
+	programs = make([]program, len(programJsonList))
 
 	mutex.Lock()
 	for i, programJson := range programJsonList {
@@ -133,7 +137,6 @@ func load() error {
 	if err != nil {
 		return err
 	}
-
 	lastResetString, err := ioutil.ReadFile("save/lastReset")
 	if err != nil {
 		return err
@@ -142,7 +145,14 @@ func load() error {
 	if err != nil {
 		return err
 	}
-
+	unitString, err := ioutil.ReadFile("save/unit")
+	if err != nil {
+		return err
+	}
+	unit, err = strconv.ParseInt(string(unitString), 10, 64)
+	if err != nil {
+		return err
+	}
 	mutex.Unlock()
 	return nil
 }
@@ -185,34 +195,118 @@ func background() {
 			lastReset += resetTime
 		}
 		mutex.Unlock()
-		logPrograms()
+		//logPrograms()
 		time.Sleep(interval * time.Second)
 	}
 }
 
 func server() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/"+r.URL.Path[1:])
+	})
+	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `
+			{
+				programs: %s,
+				resetTime: %v,
+				lastReset: %v,
+				unit: %v
+			}
+		`, programsToJson(), resetTime, lastReset, unit)
+	})
+	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
+		args := strings.Split(r.URL.RawQuery, "+")
+		if len(args) == 0 {
+			return
+		}
+		mutex.Lock()
+
+		switch args[0] {
+		case "add":
+			programs = append(programs, program{ImageName: "program.exe"})
+
+		case "set":
+			if len(args) != 3 {
+				break
+			}
+			value, err := strconv.ParseInt(string(args[2]), 10, 64)
+			if err != nil {
+				break
+			}
+			switch args[1] {
+			case "unit":
+				unit = value
+			case "resetTime":
+				resetTime = value
+			case "lastReset":
+				lastReset = value
+			}
+
+		case "change":
+			if len(args) != 4 {
+				break
+			}
+			changedIndex := -1
+			for i := range programs {
+				if programs[i].ImageName == args[1] {
+					changedIndex = i
+					break
+				}
+			}
+			if changedIndex == -1 {
+				break
+			}
+			switch args[2] { // these ones are all strings
+			case "name":
+				programs[changedIndex].Name = args[3]
+			case "imageName":
+				programs[changedIndex].ImageName = args[3]
+			case "image":
+				programs[changedIndex].Image = args[3]
+
+			default: // these ones are all ints
+				value, err := strconv.Atoi(args[3])
+				if err == nil {
+					switch args[2] {
+					case "secsUsed":
+						programs[changedIndex].SecsUsed = value
+					case "secsLimit":
+						programs[changedIndex].SecsLimit = value
+					case "secsGoal":
+						programs[changedIndex].SecsGoal = value
+					case "goalResets":
+						programs[changedIndex].GoalResets = value
+					}
+				}
+			}
+		}
+		mutex.Unlock()
+	})
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
 
 // entry
 func main() {
 	err := load()
 	if err != nil {
-		programs[0] = program{
-			ImageName:  "brave.exe",
-			Name:       "Brave browser",
-			SecsLimit:  10000,
-			SecsUsed:   9990,
-			SecsGoal:   9000,
-			GoalResets: 5,
-		}
-		programs[1] = program{
-			ImageName:  "chrome.exe",
-			Name:       "Chrome browser",
-			SecsLimit:  1000,
-			SecsUsed:   990,
-			SecsGoal:   900,
-			GoalResets: 10,
+		programs = []program{
+			{
+				ImageName:  "brave.exe",
+				Name:       "Brave_browser",
+				SecsLimit:  10000,
+				SecsUsed:   990,
+				SecsGoal:   9000,
+				GoalResets: 5,
+			}, {
+				ImageName:  "chrome.exe",
+				Name:       "Chrome_browser",
+				SecsLimit:  1000,
+				SecsUsed:   990,
+				SecsGoal:   900,
+				GoalResets: 10,
+			},
 		}
 	}
 	go background()
+	server()
 }

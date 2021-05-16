@@ -89,16 +89,14 @@ let settingsResetAllEl = document.getElementById("settings-reset-all")
 
 function loadConfig() {
 	return new Promise((resolve, reject) => {
-		fetch("./command?cycleinfo")
+		fetch("./info")
 			.then((body) => {
-				return body.text()
+				return body.json()
 			})
 			.then((data) => {
-				let [cycle_start, cycle_length,, unit] =
-					data.split("\n").slice(1)[0].split(" ")
-				config.cycle_start = Number(cycle_start)
-				config.cycle_length = Number(cycle_length)
-				config.unit = Number(unit)
+				config.cycle_start = data.lastReset
+				config.cycle_length = data.resetTime
+				config.unit = data.unit
 				switch(config.cycle_length) {
 					case 2592000:
 						config.cycle_length_name = "month"
@@ -240,31 +238,14 @@ let appDeleteEl = document.getElementById("app-delete")
 
 function refresh() {
 	return new Promise((resolve, reject) => {
-		fetch("./command?list")
+		fetch("./command?info")
 			.then((body) => {
-				return body.text()
+				return body.json()
 			})
 			.then(async (data) => {
-				applications = []
-				for(let line of data.split("\n").slice(1).reverse()) {
-					let [name, used, limit, goal, goal_cycles, friendly_name, image_url] = line.split(" ")
-					used = Number(used)
-					limit = Number(limit)
-					goal = Number(goal)
-					goal_cycles = Number(goal_cycles)
-					friendly_name = friendly_name.replace(/_/g, " ")
-					applications.push({
-						name: name,
-						used: used,
-						limit: limit,
-						goal: goal,
-						goal_cycles: goal_cycles,
-						friendly_name: friendly_name,
-						image_url: image_url
-					})
-				}
+				applications = data.programs
 				if(applications.length == 0) {
-					await fetch("./command?add+process.exe+36000+36000")
+					await fetch("./command?add")
 					await refresh()
 				}
 				resolve()
