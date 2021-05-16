@@ -1,0 +1,2 @@
+[{"name":"Brave browser","imagename":"brave.exe","secsUsed":9990,"secsLimit":10000,"secsGoal":9000,"goalRestes":5,"image":""},
+{"name":"Chrome browser","imagename":"chrome.exe","secsUsed":990,"secsLimit":1000,"secsGoal":900,"goalRestes":10,"image":""}]

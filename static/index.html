@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="./index.css">
+		<script src="index.js" defer></script>
+		<title>timan window</title>
+	</head>
+	<body>
+		<div class="menu visible" id="front">
+			<h1 id="title">timan</h1>
+			<div id="flex">
+				<a href="#" id="apps-link">apps</a>
+				<a href="#" id="settings-link">settings</a>
+			</div>
+		</div>
+		<div class="menu" id="app">
+			<h1 id="app-name" contenteditable="true"></h1>
+			<div id="flex-2">
+				<div id="flex-2-left">
+					<h2 id="process-name-header">Process name: <span id="process-name" contenteditable="true" class="input"></span>
+					<a href="#" id="app-delete">(delete app)</a></h2>
+					<p class="app-info">You have used it <span class="input" id="used-time"></span><span id="used-unit"> hours</span>
+					of your <span contenteditable="true" class="input" id="limit-time"></span> <span id="limit-unit"> hour </span><span id="cycle-unit"> weekly </span>limit.
+					<a href="#" id="lower-limit" class="visible">(lower it)</a></p>
+					<p class="app-info" id="limit-goal">You plan to reduce that limit to 
+					<span contenteditable="true" class="input" id="goal-time"></span><span id="goal-unit"> hours</span>
+					within <span contenteditable="true" class="input" id="goal-left-time"></span><span id="goal-left-unit"> weeks.</span>
+					<a href="#" id="cancel-lower-limit">(leave it were it is)</a></p>
+				</div> 
+				<img alt="App icon" id="app-logo" src="./image.svg">
+			</div>
+			<div id="app-nav">
+				<a href="#" id="app-back">back</a>
+				<a href="#" id="app-home">home</a>
+				<a href="#" id="app-next">next</a>
+			</div>
+		</div>
+		<div class="menu" id="settings">
+			<h1 id="settings-header">Settings</h1>
+			<p class="settings-info">Measure <select id="cycle-length">
+				<option value="weekly">weekly</option><option value="daily">daily</option><option value="monthly">monthly</option>
+			</select> usage</p>
+			<p class="settings-info">Measure in <select id="measure-unit">
+				<option value="hours">hours</option><option value="minutes">minutes</option><option value="seconds">seconds</option>
+			</select></p>
+			<div id="settings-nav">
+				<a href="#" id="settings-home">home</a>
+				<a href="#" id="settings-reset-all">reset all</a>
+				<a href="#" id="settings-apply">apply</a>
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@700&display=swap');
+
+:root {
+	--fsize: Calc(2.5vh + 1.5vw);
+}
+
+body {
+	margin: 0;
+	font-size: var(--fsize);
+	font-family: "Open Sans", sans-serif;
+
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+a, a:hover, a:visited {
+	color: #aaa;
+}
+
+#front, #app, #settings {
+	transition: opacity 2s;
+}
+
+.menu {
+	display: none;
+	position: absolute;
+	opacity: 0;
+	transition: opacity 2s;
+}
+
+.visible {
+	opacity: 1 !important;
+	display: initial !important;
+	animation: fadeIn 1s;
+}
+
+.hiding {
+	animation: fadeOut 1s;
+}
+
+@keyframes fadeIn {
+	from {opacity: 0;}
+	to {opacity: 1;}
+}
+
+@keyframes fadeOut {
+	from {opacity: 1;}
+	to {opacity: 0;}
+}
+
+#front {
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+#front h1 {
+	font-weight: 700;
+	font-size: Calc(4 * var(--fsize));
+	margin: 0;
+	line-height: 0.9em;
+}
+
+#front #flex {
+	display: flex;
+	justify-content: space-between;
+}
+
+#front #flex a {
+	font-size: 1.5em;
+}
+
+#app {
+	margin: var(--fsize);
+}
+
+.input {
+	height: var(--fsize);
+	width: Calc(1.5 * var(--fsize));
+	font-size: var(--fsize);
+	text-align: center;
+	color: #777;
+	font-weight: 700;
+}
+
+.input:empty:before{
+	content: "_";
+}
+
+.input:hover {
+	cursor: text;
+}
+
+#app-name {
+	margin-top: var(--fsize);
+}
+
+#app-name:empty:before {
+	content: "App Name"
+}
+
+#process-name-header, #process-name {
+	font-weight: 400;
+	font-size: Calc(0.75 * var(--fsize));
+	color: #aaa;
+	margin-top: -2.1em;
+}
+
+#process-name:empty:before {
+	content: "process.exe"
+}
+
+#app-name:hover, #process-name:hover{
+	cursor: text;
+}
+
+#app-delete {
+	margin-left: 5vw;
+	text-align: right;
+	color: #777;
+}
+
+p {
+	color: #aaa;
+}
+
+p:hover {
+	cursor: default;
+}
+
+#lower-limit, #cancel-lower-limit {
+	color: #777 !important;
+}
+
+#lower-limit {
+	display: none;
+	opacity: 0;
+}
+
+#flex-2 {
+	display: flex;
+}
+
+#flex-2-left {
+	width: 60%;
+}
+
+#app-logo {
+	object-fit: cover;
+	margin: 5vh;
+	margin-top: -10vh;
+	width: 30vw;
+	height: auto;
+	max-height: 70vh;
+}
+
+#app-logo:hover {
+	cursor: pointer;
+}
+
+#app-nav {
+	position: absolute;
+	margin: auto;
+	top: 100vh;
+	left: 50%;
+	transform: translate(-50%, -220%);
+	display: flex;
+	justify-content: space-between;
+	text-align: center;
+	width: 90%;
+}
+
+#limit-goal {
+	display: none;
+}
+
+#settings {
+	width: Calc(100vw - Calc(2 * var(--fsize)));
+	margin: var(--fsize);
+	margin-top: 0;
+	text-align: right;
+}
+
+select {
+	font-size: var(--fsize);
+	color: #777;
+	border: 2px solid #aaa;
+	border-radius: 5px;
+	font-weight: 700;
+}
+
+select:hover {
+	cursor: pointer;
+}
+
+#settings-nav {
+	position: absolute;
+	margin: auto;
+	top: 100vh;
+	left: 50%;
+	transform: translate(-50%, -150%);
+	display: flex;
+	justify-content: space-between;
+	text-align: center;
+	width: 90%;
+}
