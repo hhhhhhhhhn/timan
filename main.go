@@ -17,7 +17,7 @@ const interval = 5
 
 type program struct {
 	Name       string `json:"name"`
-	ImageName  string `json:"imagename"`
+	ImageName  string `json:"imageName"`
 	SecsUsed   int    `json:"secsUsed"`
 	SecsLimit  int    `json:"secsLimit"`
 	SecsGoal   int    `json:"secsGoal"`
@@ -200,17 +200,24 @@ func background() {
 	}
 }
 
+// the webserver
 func server() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		//contents, err := ioutil.ReadFile("static/" + r.URL.Path)
+		//if err == nil {
+		//	fmt.Fprint(w, string(contents))
+		//} else {
+		//	fmt.Println(err)
+		//}
 		http.ServeFile(w, r, "static/"+r.URL.Path[1:])
 	})
 	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `
 			{
-				programs: %s,
-				resetTime: %v,
-				lastReset: %v,
-				unit: %v
+				"programs": %s,
+				"resetTime": %v,
+				"lastReset": %v,
+				"unit": %v
 			}
 		`, programsToJson(), resetTime, lastReset, unit)
 	})
@@ -223,7 +230,23 @@ func server() {
 
 		switch args[0] {
 		case "add":
-			programs = append(programs, program{ImageName: "program.exe"})
+			programs = append(programs, program{ImageName: "program.exe", Image: "./image.svg"})
+
+		case "remove":
+			if len(args) != 2 {
+				break
+			}
+			removedI := -1
+			for i := range programs {
+				if programs[i].ImageName == args[1] {
+					removedI = i
+					break
+				}
+			}
+			if removedI == -1 {
+				break
+			}
+			programs = append(programs[:removedI], programs[removedI+1:]...)
 
 		case "set":
 			if len(args) != 3 {
@@ -297,6 +320,7 @@ func main() {
 				SecsUsed:   990,
 				SecsGoal:   9000,
 				GoalResets: 5,
+				Image:      "./image.svg",
 			}, {
 				ImageName:  "chrome.exe",
 				Name:       "Chrome_browser",
@@ -304,6 +328,7 @@ func main() {
 				SecsUsed:   990,
 				SecsGoal:   900,
 				GoalResets: 10,
+				Image:      "./image.svg",
 			},
 		}
 	}

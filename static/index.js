@@ -42,7 +42,7 @@ function setScreen(screen) {
 	setTimeout(() => {
 		currentScreen.classList.remove("hiding")
 		currentScreen.classList.add("visible")
-	}, 1)
+	}, 100)
 }
 
 function setLowerLimit(lowerLimit) {
@@ -97,6 +97,7 @@ function loadConfig() {
 				config.cycle_start = data.lastReset
 				config.cycle_length = data.resetTime
 				config.unit = data.unit
+				console.log(data, config)
 				switch(config.cycle_length) {
 					case 2592000:
 						config.cycle_length_name = "month"
@@ -156,26 +157,26 @@ function setConfig(config) {
 			case "cycle_length_name":
 				switch(value) {
 					case "month":
-						fetch("./command?cyclelength+2592000")
+						fetch("./command?set+resetTime+2592000")
 						break
 					case "day":
-						fetch("./command?cyclelength+86400")
+						fetch("./command?set+resetTime+86400")
 						break
-					default:
-						fetch("./command?cyclelength+604800")
+					default: // week
+						fetch("./command?set+resetTime+604800")
 						break
 				}
 				break
 			case "unit_name":
 				switch(value) {
 					case "second":
-						fetch("./command?unit+1")
+						fetch("./command?set+unit+1")
 						break
 					case "minute":
-						fetch("./command?unit+60")
+						fetch("./command?set+unit+60")
 						break
 					default:
-						fetch("./command?unit+3600")
+						fetch("./command?set+unit+3600")
 						break
 				}
 			default:
@@ -238,11 +239,12 @@ let appDeleteEl = document.getElementById("app-delete")
 
 function refresh() {
 	return new Promise((resolve, reject) => {
-		fetch("./command?info")
+		fetch("./info")
 			.then((body) => {
 				return body.json()
 			})
 			.then(async (data) => {
+				console.log(data)
 				applications = data.programs
 				if(applications.length == 0) {
 					await fetch("./command?add")
@@ -258,6 +260,7 @@ function refresh() {
 
 async function loadApp(index) {
 	await refresh()
+	console.log(applications)
 	if(index < 0)
 		index = applications.length
 	appIndex = index
@@ -282,19 +285,19 @@ async function loadApp(index) {
 		appLogoEl.setAttribute("src", "./image.svg")
 	}
 	else {
-		appNameEl.innerHTML = applications[index].friendly_name
+		appNameEl.innerHTML = applications[index].name.replace(/_/g, " ")
 		usedTimeEl.innerHTML =
-			Math.floor(applications[index].used / config.unit)
+			Math.floor(applications[index].secsUsed / config.unit)
 		limitTimeEl.innerHTML = 
-			Math.floor(applications[index].limit / config.unit)
+			Math.floor(applications[index].secsLimit / config.unit)
 		goalTimeEl.innerHTML = 
-			Math.floor(applications[index].goal / config.unit)
-		goalLeftTimeEl.innerHTML = applications[index].goal_cycles
-		processNameEl.innerHTML = applications[index].name
-		appLogoEl.setAttribute("src", applications[index].image_url)
+			Math.floor(applications[index].secsGoal / config.unit)
+		goalLeftTimeEl.innerHTML = applications[index].goalResets
+		processNameEl.innerHTML = applications[index].imageName
+		appLogoEl.setAttribute("src", applications[index].image)
 	}
 	if(applications[index].goal_cycles == 0
-	|| applications[index].goal == applications[index].limit)
+	|| applications[index].goal == applications[index].secsLimit)
 		setLowerLimit(false)
 	else
 		setLowerLimit(true)
@@ -309,7 +312,7 @@ appsLinkEl.addEventListener("click", (e) => {
 appNextEl.addEventListener("click", async (e) => {
 	e.preventDefault()
 	if(appNextEl.innerHTML == "add") {
-		await fetch("./command?add+process.exe+36000+36000")
+		await fetch("./command?add")
 	}
 	loadApp(appIndex + 1);
 })
@@ -320,55 +323,55 @@ appBackEl.addEventListener("click", (e) => {
 })
 
 limitTimeEl.addEventListener("focusout", async () => {
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newLimit = Number(limitTimeEl.innerHTML)
 	if(Number.isNaN(newLimit))
 		return
 	newLimit *= config.unit
-	await fetch(`./command?change+${processName}+secs_limit+${newLimit}`)
+	await fetch(`./command?change+${processName}+secsLimit+${newLimit}`)
 	refresh()
 })
 
 goalTimeEl.addEventListener("focusout", async () => {
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newGoal = Number(goalTimeEl.innerHTML)
 	if(Number.isNaN(newGoal))
 		return
 	newGoal *= config.unit
-	await fetch(`./command?change+${processName}+limit_goal+${newGoal}`)
+	await fetch(`./command?change+${processName}+secsGoal+${newGoal}`)
 	refresh()
 })
 
 goalLeftTimeEl.addEventListener("focusout", async () => {
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newGoalLeft = Number(goalLeftTimeEl.innerHTML)
 	if(Number.isNaN(newGoalLeft))
 		return
-	await fetch(`./command?change+${processName}+goal_cycles+${newGoalLeft}`)
+	await fetch(`./command?change+${processName}+goalResets+${newGoalLeft}`)
 	refresh()
 })
 
 appNameEl.addEventListener("focusout", async () => {
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newFriendlyName = appNameEl.innerHTML.replace(/ /g, "_")
 	await fetch(
-		`./command?change+${processName}+friendly_name+${newFriendlyName}`)
+		`./command?change+${processName}+name+${newFriendlyName}`)
 	refresh()
 })
 
 processNameEl.addEventListener("focusout", async () => {
-	let processName = applications[appIndex].name
-	let newProcessName = processNameEl.innerHTML.replace(/ /g, "_")
+	let processName = applications[appIndex].imageName
+	let newProcessName = processNameEl.innerHTML.replace(/ /g, "")
 	if(newProcessName == "")
 		return
 	await fetch(
-		`./command?change+${processName}+name+${newProcessName}`)
+		`./command?change+${processName}+imageName+${newProcessName}`)
 	refresh()
 })
 
 appLogoEl.addEventListener("click", async (e) => {
 	e.preventDefault()
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newUrl = prompt("Please enter an image url", "")
 	try {
 		new URL(newUrl)
@@ -378,18 +381,18 @@ appLogoEl.addEventListener("click", async (e) => {
 		newUrl = "./image.svg"
 		appLogoEl.setAttribute("src", newUrl)
 	}
-	await fetch(`./command?change+${processName}+image_url+${newUrl}`)
+	await fetch(`./command?change+${processName}+image+${newUrl}`)
 })
 
 lowerLimitEl.addEventListener("click", async (e) => {
 	e.preventDefault()
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newGoal = Number(limitTimeEl.innerHTML)
 	if(Number.isNaN(newGoal))
 		return
 	newGoal = Math.floor(newGoal * config.unit / 2)
-	fetch(`./command?change+${processName}+limit_goal+${newGoal}`)
-	fetch(`./command?change+${processName}+goal_cycles+8`)
+	fetch(`./command?change+${processName}+secsGoal+${newGoal}`)
+	fetch(`./command?change+${processName}+goalResets+8`)
 	goalTimeEl.innerHTML = Math.floor(newGoal / config.unit)
 	goalLeftTimeEl.innerHTML = 8
 	refresh()
@@ -398,19 +401,19 @@ lowerLimitEl.addEventListener("click", async (e) => {
 
 cancelLowerLimitEl.addEventListener("click", async (e) => {
 	e.preventDefault()
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	let newGoal = Number(limitTimeEl.innerHTML)
 	if(Number.isNaN(newGoal))
 		return
 	newGoal *= config.unit
-	fetch(`./command?change+${processName}+limit_goal+${newGoal}`)
-	fetch(`./command?change+${processName}+goal_cycles+0`)
+	fetch(`./command?change+${processName}+secsGoal+${newGoal}`)
+	fetch(`./command?change+${processName}+goalResets+0`)
 	setLowerLimit(false)
 })
 
 appDeleteEl.addEventListener("click", async (e) => {
 	e.preventDefault()
-	let processName = applications[appIndex].name
+	let processName = applications[appIndex].imageName
 	await fetch(`./command?remove+${processName}`)
 	await refresh()
 	if(appIndex == applications.length)
