@@ -1,3 +1,3 @@
-[{"name":"Brave_browser","imageName":"brave.exe","secsUsed":90,"secsLimit":9800,"secsGoal":9000,"goalResets":4,"image":"./image.svg"},
-{"name":"Chrome_browser","imageName":"chrome.exe","secsUsed":0,"secsLimit":990,"secsGoal":900,"goalResets":9,"image":"./image.svg"},
-{"name":"Yet_another_test","imageName":"spotify.exe","secsUsed":0,"secsLimit":12000,"secsGoal":12000,"goalResets":0,"image":"./image.svg"}]
+[{"name":"Brave_browser","imageName":"brave.exe","secsUsed":30,"secsLimit":9600,"secsGoal":9000,"goalResets":3,"image":"./image.svg"},
+{"name":"Chrome_browser","imageName":"chrome.exe","secsUsed":0,"secsLimit":980,"secsGoal":900,"goalResets":8,"image":"./image.svg"},
+{"name":"Another_app","imageName":"program.exe","secsUsed":0,"secsLimit":0,"secsGoal":0,"goalResets":0,"image":"./image.svg"}]

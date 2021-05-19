@@ -1,13 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -40,140 +34,6 @@ var unit int64 = 60 // seconds
 // kills program by imagename
 func (prog program) kill() {
 	exec.Command("taskkill", "/f", "/im", prog.ImageName).Run()
-}
-
-// gets timestamp of monday morning in seconds
-func lastMonday() int64 {
-	output := time.Now()
-	if output.Weekday() == 0 {
-		output = output.AddDate(0, 0, -6)
-	} else {
-		output = output.AddDate(0, 0, -int(output.Weekday()-1))
-	}
-	output = output.Add(-time.Duration(output.Hour()) * time.Hour)
-	output = output.Add(-time.Duration(output.Minute()) * time.Minute)
-	output = output.Add(-time.Duration(output.Second()) * time.Second)
-
-	return output.Unix()
-}
-
-// prints error and exits
-func handle(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// index of character chr in string str, start searching from index start
-func index(str string, chr byte, start int) int {
-	for i := start; i < len(str); i++ {
-		if str[i] == chr {
-			return i
-		}
-	}
-	return -1
-}
-
-// checks if array includes the string
-func contains(array []string, str string) bool {
-	for _, element := range array {
-		if element == str {
-			return true
-		}
-	}
-	return false
-}
-
-// logs all programs
-func logPrograms() {
-	println()
-	for _, program := range programs {
-		fmt.Println("Name:", program.Name)
-		fmt.Println("Image Name:", program.ImageName)
-		fmt.Println("Used:", program.SecsUsed, "s")
-		fmt.Println("Limit:", program.SecsLimit, "s")
-		fmt.Println("Goal:", program.SecsGoal, "s")
-		fmt.Println("Goal Resets:", program.GoalResets)
-		println()
-	}
-}
-
-// returns list of programs as JSON
-func programsToJson() string {
-	output := "["
-	for i, program := range programs {
-		json, err := json.Marshal(program)
-		handle(err)
-		output += string(json)
-		if i != len(programs)-1 {
-			output += ",\n"
-		}
-	}
-	return output + "]"
-}
-
-// loads programs from JSON
-func jsonToPrograms(programsJson string) ([]program, error) {
-	programJsonList := strings.Split(string(programsJson)[1:], "\n")
-
-	programList := make([]program, len(programJsonList))
-
-	for i, programJson := range programJsonList {
-		var parsedProgram program
-		err := json.Unmarshal([]byte(programJson[:len(programJson)-1]), &parsedProgram)
-		if err != nil {
-			return nil, err
-		}
-		programList[i] = parsedProgram
-	}
-	return programList, nil
-}
-
-// reads int64 from file contents
-func readInt64FromFile(filename string) (value int64, err error) {
-	valueString, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return 0, err
-	}
-	value, err = strconv.ParseInt(string(valueString), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return value, nil
-}
-
-// saves main data
-func save() {
-	handle(ioutil.WriteFile("save/programs.json", []byte(programsToJson()), 0777))
-	handle(ioutil.WriteFile("save/resetTime", []byte(fmt.Sprint(resetTime)), 0777))
-	handle(ioutil.WriteFile("save/lastReset", []byte(fmt.Sprint(lastReset)), 0777))
-	handle(ioutil.WriteFile("save/unit", []byte(fmt.Sprint(unit)), 0777))
-}
-
-// loads main data
-// NOTE: no mutex lock
-func load() error {
-	programsJson, err := ioutil.ReadFile("save/programs.json")
-	if err != nil {
-		return err
-	}
-	programs, err = jsonToPrograms(string(programsJson))
-	if err != nil {
-		return err
-	}
-	resetTime, err = readInt64FromFile("save/resetTime")
-	if err != nil {
-		return err
-	}
-	lastReset, err = readInt64FromFile("save/lastReset")
-	if err != nil {
-		return err
-	}
-	unit, err = readInt64FromFile("save/unitString")
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // lists all imagenames of all programs
@@ -210,7 +70,7 @@ func resetPrograms() {
 
 // does the actual program monitoring and stuff
 func background() {
-	for true {
+	for {
 		running, err := listRunningPrograms()
 		handle(err)
 
@@ -256,91 +116,6 @@ func removeProgram(index int) {
 }
 
 // the webserver
-func server() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/"+r.URL.Path[1:])
-	})
-	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `
-			{
-				"programs": %s,
-				"resetTime": %v,
-				"lastReset": %v,
-				"unit": %v
-			}
-		`, programsToJson(), resetTime, lastReset, unit)
-	})
-	http.HandleFunc("/command", func(w http.ResponseWriter, r *http.Request) {
-		args := strings.Split(r.URL.RawQuery, "+")
-		if len(args) == 0 {
-			return
-		}
-		mutex.Lock()
-
-		switch args[0] {
-		case "add":
-			addProgram(program{ImageName: "program.exe", Image: "./image.svg"})
-
-		case "remove":
-			if len(args) != 2 {
-				break
-			}
-			index := getProgramIndexByImageName(args[1])
-			removeProgram(index)
-
-		case "set":
-			if len(args) != 3 {
-				break
-			}
-			value, err := strconv.ParseInt(string(args[2]), 10, 64)
-			if err != nil {
-				break
-			}
-			switch args[1] {
-			case "unit":
-				unit = value
-			case "resetTime":
-				resetTime = value
-			case "lastReset":
-				lastReset = value
-			}
-
-		case "change":
-			if len(args) != 4 {
-				break
-			}
-			index := getProgramIndexByImageName(args[1])
-			if index == -1 {
-				break
-			}
-			switch args[2] { // these ones are all strings
-			case "name":
-				programs[index].Name = args[3]
-			case "imageName":
-				programs[index].ImageName = args[3]
-			case "image":
-				programs[index].Image = args[3]
-
-			default: // these ones are all ints
-				value, err := strconv.Atoi(args[3])
-				if err == nil {
-					switch args[2] {
-					case "secsUsed":
-						programs[index].SecsUsed = value
-					case "secsLimit":
-						programs[index].SecsLimit = value
-					case "secsGoal":
-						programs[index].SecsGoal = value
-					case "goalResets":
-						programs[index].GoalResets = value
-					}
-				}
-			}
-		}
-		mutex.Unlock()
-	})
-	log.Fatal(http.ListenAndServe(":5019", nil))
-}
 
 func setDefault() {
 	resetTime = 86400 // = day in seconds
