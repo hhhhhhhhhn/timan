@@ -6,8 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hhhhhhhhhn/timan/icon"
+
 	"github.com/getlantern/systray"
-	"github.com/getlantern/systray/example/icon"
 )
 
 const interval = 5
