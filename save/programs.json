@@ -1,2 +1,4 @@
-[{"name":"Brave_browser","imageName":"brave.exe","secsUsed":10,"secsLimit":9600,"secsGoal":9000,"goalResets":3,"image":"./image.svg"},
-{"name":"Chrome_browser","imageName":"chrome.exe","secsUsed":0,"secsLimit":980,"secsGoal":900,"goalResets":8,"image":"./image.svg"}]
+[{"name":"Brave_browser","imageName":"brave.exe","secsUsed":140,"secsLimit":9600,"secsGoal":9000,"goalResets":3,"image":"./image.svg"},
+{"name":"Chrome_browser","imageName":"chrome.exe","secsUsed":0,"secsLimit":980,"secsGoal":900,"goalResets":8,"image":"./image.svg"},
+{"name":"yet_another_test","imageName":"yetanother.exe","secsUsed":0,"secsLimit":3000,"secsGoal":0,"goalResets":0,"image":"./image.svg"},
+{"name":"test","imageName":"test","secsUsed":0,"secsLimit":0,"secsGoal":300,"goalResets":0,"image":"./image.svg"}]

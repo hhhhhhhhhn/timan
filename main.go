@@ -9,6 +9,7 @@ import (
 	"github.com/hhhhhhhhhn/timan/icon"
 
 	"github.com/getlantern/systray"
+	"github.com/gonutz/w32/v2"
 )
 
 const interval = 5
@@ -116,8 +117,6 @@ func removeProgram(index int) {
 	programs = append(programs[:index], programs[index+1:]...)
 }
 
-// the webserver
-
 func setDefault() {
 	resetTime = 86400 // = day in seconds
 	lastReset = lastMonday()
@@ -162,8 +161,18 @@ func setupTray() {
 	}()
 }
 
-// entry
+func hideConsole() {
+	console := w32.GetConsoleWindow()
+	if console != 0 {
+		_, consoleProcID := w32.GetWindowThreadProcessId(console)
+		if w32.GetCurrentProcessId() == consoleProcID {
+			w32.ShowWindowAsync(console, w32.SW_HIDE)
+		}
+	}
+}
+
 func main() {
+	hideConsole()
 	mutex.Lock()
 	err := load()
 	if err != nil {

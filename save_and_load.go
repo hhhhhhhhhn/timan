@@ -79,7 +79,7 @@ func load() error {
 	if err != nil {
 		return err
 	}
-	unit, err = readInt64FromFile("save/unitString")
+	unit, err = readInt64FromFile("save/unit")
 	if err != nil {
 		return err
 	}

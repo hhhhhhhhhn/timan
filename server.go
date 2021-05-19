@@ -12,6 +12,9 @@ func server() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/"+r.URL.Path[1:])
 	})
+	http.HandleFunc("/log", func(w http.ResponseWriter, r *http.Request) {
+		logPrograms()
+	})
 	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `
 			{
