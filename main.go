@@ -11,6 +11,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/getlantern/systray"
+	"github.com/getlantern/systray/example/icon"
 )
 
 const interval = 5
@@ -336,7 +339,51 @@ func server() {
 		}
 		mutex.Unlock()
 	})
-	log.Fatal(http.ListenAndServe(":80", nil))
+	log.Fatal(http.ListenAndServe(":5019", nil))
+}
+
+func setDefault() {
+	resetTime = 86400 // = day in seconds
+	lastReset = lastMonday()
+	unit = 60 // = minute in seconds
+	programs = []program{
+		{
+			ImageName:  "brave.exe",
+			Name:       "Brave_browser",
+			SecsLimit:  10000,
+			SecsUsed:   990,
+			SecsGoal:   9000,
+			GoalResets: 5,
+			Image:      "./image.svg",
+		}, {
+			ImageName:  "chrome.exe",
+			Name:       "Chrome_browser",
+			SecsLimit:  1000,
+			SecsUsed:   990,
+			SecsGoal:   900,
+			GoalResets: 10,
+			Image:      "./image.svg",
+		},
+	}
+}
+
+func setupTray() {
+	systray.SetTemplateIcon(icon.Data, icon.Data)
+	systray.SetTitle("timan")
+	systray.SetTooltip("timan")
+	mUrl := systray.AddMenuItem("Open", "Open in browser")
+	mQuitOrig := systray.AddMenuItem("Quit", "Quit timan")
+
+	go func() {
+		for {
+			select {
+			case <-mQuitOrig.ClickedCh:
+				systray.Quit()
+			case <-mUrl.ClickedCh:
+				exec.Command("cmd", "/c", "start", "http://localhost:5019").Start()
+			}
+		}
+	}()
 }
 
 // entry
@@ -344,27 +391,11 @@ func main() {
 	mutex.Lock()
 	err := load()
 	if err != nil {
-		programs = []program{
-			{
-				ImageName:  "brave.exe",
-				Name:       "Brave_browser",
-				SecsLimit:  10000,
-				SecsUsed:   990,
-				SecsGoal:   9000,
-				GoalResets: 5,
-				Image:      "./image.svg",
-			}, {
-				ImageName:  "chrome.exe",
-				Name:       "Chrome_browser",
-				SecsLimit:  1000,
-				SecsUsed:   990,
-				SecsGoal:   900,
-				GoalResets: 10,
-				Image:      "./image.svg",
-			},
-		}
+		setDefault()
 	}
 	mutex.Unlock()
+
 	go background()
-	server()
+	go server()
+	systray.Run(setupTray, save)
 }
